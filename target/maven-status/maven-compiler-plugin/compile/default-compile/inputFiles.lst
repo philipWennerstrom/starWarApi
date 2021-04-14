@@ -1,0 +1,9 @@
+/home/luiz.philip/eclipse-workspace/starWarApi/src/main/java/br/com/b2sky/infra/starwarapi/beans/StarWarPlanet.java
+/home/luiz.philip/eclipse-workspace/starWarApi/src/main/java/br/com/b2sky/infra/controller/PlanetController.java
+/home/luiz.philip/eclipse-workspace/starWarApi/src/main/java/br/com/b2sky/infra/repo/PlanetRepository.java
+/home/luiz.philip/eclipse-workspace/starWarApi/src/main/java/br/com/b2sky/infra/service/StarWarApiService.java
+/home/luiz.philip/eclipse-workspace/starWarApi/src/main/java/br/com/b2sky/infra/service/PlanetService.java
+/home/luiz.philip/eclipse-workspace/starWarApi/src/main/java/br/com/b2sky/infra/StarWarApplication.java
+/home/luiz.philip/eclipse-workspace/starWarApi/src/main/java/br/com/b2sky/infra/starwarapi/beans/PlanetsPage.java
+/home/luiz.philip/eclipse-workspace/starWarApi/src/main/java/br/com/b2sky/infra/beans/Planet.java
+/home/luiz.philip/eclipse-workspace/starWarApi/src/main/java/br/com/b2sky/infra/errors/PlanetNotFoundException.java

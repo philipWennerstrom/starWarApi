@@ -1,0 +1,103 @@
+<configuration debug="true">
+	<logger name="org.apache" level="INFO" />
+	<logger name="org.mongodb.driver.cluster" level="ERROR" />
+	<logger name="org.springframework" level="INFO" />
+	<logger name="com.b2winc" level="${log.level:-INFO}" />
+	<logger name="com.b2winc.common" level="${log.level:-DEBUG}" />
+	<logger name="reactor" level="INFO" />
+	<logger name="reactor.ipc.netty" level="INFO"/>
+	<logger name="io.netty" level="INFO" />
+	<logger name="java.net" level="INFO" />
+	<logger name="java.io" level="INFO" />
+	<logger name="java.nio" level="INFO" />
+	<logger name="org" level="INFO" />
+	<logger name="com" level="INFO" />
+
+	<if condition='property("log.format").equalsIgnoreCase("notJson")'>
+		<then>
+			<!-- other environments config -->
+			<appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
+				<Target>System.out</Target>
+				<encoder>
+					<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n
+					</pattern>
+				</encoder>
+			</appender>
+
+			<root level="${log.level:-INFO}">
+				<appender-ref ref="stdout" />
+			</root>
+		</then>
+		<else>
+			<!-- IF log.format == 'json' -->
+			<appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
+				<encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+					<layout
+						class="br.com.b2sky.infra.log.formatter.LogFormatterSingleLine" />
+				</encoder>
+			</appender>
+
+			<!-- production config -->
+			<appender name="file"
+				class="ch.qos.logback.core.rolling.RollingFileAppender">
+				<file>${log.folder:-/opt/logs}/${log.fileName:-message-receiver.log}
+				</file>
+				<rollingPolicy
+					class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+					<fileNamePattern>${log.folder:-/opt/logs}/${log.fileName:-message-receiver.log}%i.log
+					</fileNamePattern>
+					<minIndex>1</minIndex>
+					<maxIndex>9</maxIndex>
+				</rollingPolicy>
+
+				<triggeringPolicy
+					class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+					<maxFileSize>200MB</maxFileSize>
+				</triggeringPolicy>
+				<encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+					<layout
+						class="br.com.b2sky.infra.log.formatter.LogFormatterSingleLine" />
+				</encoder>
+			</appender>
+
+			<appender name="asyncAppender" class="ch.qos.logback.classic.AsyncAppender">
+				<queueSize>500</queueSize>
+				<discardingThreshold>0</discardingThreshold>
+				<maxFlushTime>${log.async.maxFlushTime:-180000}</maxFlushTime>
+				<appender-ref ref="${log.appender:-file}" />
+			</appender>
+
+			<appender name="asyncStdout" class="ch.qos.logback.classic.AsyncAppender">
+				<queueSize>500</queueSize>
+				<discardingThreshold>0</discardingThreshold>
+				<maxFlushTime>${log.async.maxFlushTime:-180000}</maxFlushTime>
+				<appender-ref ref="stdout" />
+				<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+					<level>${log.stdout.level:INFO}</level>
+				</filter>
+			</appender>
+
+			<root level="${log.level:-INFO}">
+				<if condition='property("log.type").equals("sync")'>
+					<then>
+						<appender-ref ref="${log.appender:-file}" />
+						<if condition='property("log.toStdout").equalsIgnoreCase("true")'>
+							<then>
+								<appender-ref ref="stdout" />
+							</then>
+						</if>
+					</then>
+					<else>
+						<!-- IF log.appender == async -->
+						<appender-ref ref="asyncAppender" />
+						<if condition='property("log.toStdout").equalsIgnoreCase("true")'>
+							<then>
+								<appender-ref ref="asyncStdout" />
+							</then>
+						</if>
+					</else>
+				</if>
+			</root>
+		</else>
+	</if>
+</configuration>

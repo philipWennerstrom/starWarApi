@@ -1,0 +1,172 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Beanstalk para a app b2sky-manager"
+
+Parameters:
+  AppName:
+    Type: String
+    Default: b2sky-manager
+  AppEnv:
+    Type: String
+    Default: hmg
+  AppInstanceType: 
+    Type: String
+    Default: t2.medium
+    AllowedValues:
+      - t2.small
+      - t2.medium
+      - t2.large
+  HealthCheckUrl:
+    Type: String
+    Default: /health
+  AccountVpc:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC da conta aws
+    Default: vpc-0d4f64efc73dd5aa2
+  EC2Subnets:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Subnets App_a,App_b
+    Default: subnet-09e35701c4888a3b3,subnet-0e1b8500824baaa76
+  LoadBalancerSubnets:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Subnets App_a,App_b
+    Default: subnet-09e35701c4888a3b3,subnet-0e1b8500824baaa76
+  LoadBalancerVisibility:
+    Type: String
+    Default: internal
+  LoadBalancerType:
+    Type: String
+    Default: application
+  EBSolutionStackName:
+    Type: String
+    Default: 64bit Amazon Linux 2 v3.2.4 running Docker
+  AccessLogsS3BucketName:
+    Type: String
+    Default: b2sky-load-balancer-access-logs-hmg
+
+Resources:
+  CloudWatchLogsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ["ec2.amazonaws.com"]
+            Action: ["sts:AssumeRole"]
+      Policies:
+        - PolicyName: AppLogsPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:GetLogEvents",
+                    "logs:PutLogEvents",
+                    "logs:DescribeLogGroups",
+                    "logs:DescribeLogStreams",
+                    "logs:FilterLogEvents",
+                    "logs:PutRetentionPolicy"
+                  ]
+                Resource: "*"
+
+  InstanceProfile:
+    Type: "AWS::IAM::InstanceProfile"
+    Properties:
+      InstanceProfileName: !Sub ${App}-${AppEnv}-IAMProfile
+      Roles:
+        - !Ref CloudWatchLogsRole
+
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/elasticbeanstalk/${App}-${AppEnv}/var/log/eb-docker/containers/eb-current-app/stdouterr.log
+      RetentionInDays: 7
+
+  App:
+    Type: "AWS::ElasticBeanstalk::Application"
+    Properties:
+      ApplicationName: !Sub ${AppName}
+      Description: !Sub Aplicação ${AppName}
+  
+  AppVersion:
+    Type: "AWS::ElasticBeanstalk::ApplicationVersion"
+    Properties:
+      ApplicationName: !Ref App
+      Description: String
+      SourceBundle:
+        S3Bucket: !Sub ${AppName}-${AppEnv}
+        S3Key: !Sub ${AppName}-${AppEnv}.zip
+
+  AppEnvironment:
+    Type: "AWS::ElasticBeanstalk::Environment"
+    Properties:
+      EnvironmentName: !Sub ${App}-${AppEnv}
+      ApplicationName: !Ref App
+      SolutionStackName: !Sub ${EBSolutionStackName}
+      Tier:
+        Name: WebServer
+        Type: Standard
+        Version: "1.0"
+      VersionLabel: !Ref AppVersion
+      OptionSettings: 
+        - Namespace: aws:elasticbeanstalk:application:environment
+          OptionName: SPRING_PROFILES_ACTIVE
+          Value: !Sub ${AppEnv}
+        - Namespace: aws:elasticbeanstalk:command
+          OptionName: DeploymentPolicy
+          Value: RollingWithAdditionalBatch
+        - Namespace: aws:elasticbeanstalk:command
+          OptionName: BatchSizeType
+          Value: Fixed
+        - Namespace: aws:elasticbeanstalk:command
+          OptionName: BatchSize
+          Value: 1
+        - Namespace: aws:ec2:vpc
+          OptionName: VPCId
+          Value: !Ref AccountVpc
+        - Namespace: aws:ec2:vpc
+          OptionName: Subnets
+          Value: 
+            Fn::Join:
+            - ','
+            - !Ref EC2Subnets
+        - Namespace: "aws:autoscaling:launchconfiguration"
+          OptionName: InstanceType
+          Value: !Ref AppInstanceType
+        - Namespace: "aws:elasticbeanstalk:environment:process:default"
+          OptionName: HealthCheckPath
+          Value: !Ref HealthCheckUrl
+        - Namespace: aws:elasticbeanstalk:environment
+          OptionName: EnvironmentType
+          Value: LoadBalanced
+        - Namespace: "aws:elasticbeanstalk:environment"
+          OptionName: LoadBalancerType
+          Value: !Ref LoadBalancerType
+        - Namespace: "aws:ec2:vpc"
+          OptionName: ELBSubnets
+          Value: 
+            Fn::Join:
+            - ','
+            - !Ref LoadBalancerSubnets
+        - Namespace: "aws:ec2:vpc"
+          OptionName: ELBScheme
+          Value: !Sub ${LoadBalancerVisibility}
+        - Namespace: "aws:autoscaling:launchconfiguration"
+          OptionName: IamInstanceProfile
+          Value: !Ref InstanceProfile
+        - Namespace: aws:elasticbeanstalk:cloudwatch:logs
+          OptionName: StreamLogs
+          Value: true
+        - Namespace: aws:elbv2:loadbalancer
+          OptionName: AccessLogsS3Enabled
+          Value: true
+        - Namespace: aws:elbv2:loadbalancer
+          OptionName: AccessLogsS3Bucket
+          Value: !Ref AccessLogsS3BucketName
+        - Namespace: aws:elbv2:loadbalancer
+          OptionName: AccessLogsS3Prefix
+          Value: !Ref AppName

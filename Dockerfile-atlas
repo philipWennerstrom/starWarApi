@@ -1,0 +1,25 @@
+FROM registry.b2w.io/atlas/oraclejdk8
+
+ENV APP_NAME b2sky-manager
+ENV APP_HOME /opt/applications
+ENV APP_ENV hmg
+ENV JAVA_OPTS "-server -XX:+UseG1GC"
+
+RUN mkdir -p $APP_HOME \
+	$APP_HOME/$APP_NAME \
+	$APP_HOME/$APP_NAME/config \
+	$APP_HOME/$APP_NAME/logs \
+	$APP_HOME/$APP_NAME/lib && \
+	ln -s $APP_HOME/$APP_NAME/config /config && \
+	ln -s $APP_HOME/$APP_NAME/logs /logs
+
+WORKDIR $APP_HOME/$APP_NAME
+
+VOLUME /config
+VOLUME /logs
+
+EXPOSE 8080
+
+COPY ./target/*.jar $APP_HOME/$APP_NAME/app.jar
+
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -cp app.jar:lib/* -Dspring.profiles.active=$APP_ENV -Dloader.main=br.com.b2sky.infra.StarWarApplication org.springframework.boot.loader.PropertiesLauncher"]

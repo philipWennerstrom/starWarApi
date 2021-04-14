@@ -1,0 +1,13 @@
+{
+  "AWSEBDockerrunVersion": "1",
+  "Image": {
+    "Name": "b2sky-manager",
+    "Update": "true"
+  },
+  "Volumes": [
+    {
+      "HostDirectory": "/var/log/b2w-application",
+      "ContainerDirectory": "/var/log/b2w-application"
+    }
+  ]
+}
