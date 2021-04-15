@@ -3,6 +3,7 @@ package br.com.b2sky.infra.errors;
 public class PlanetNotFoundException extends RuntimeException{
 	private static final long serialVersionUID = 1L;
 	private final String name;
+	
 	public PlanetNotFoundException(String name) {
 		super();
 		this.name = name;

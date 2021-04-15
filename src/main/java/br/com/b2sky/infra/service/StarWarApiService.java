@@ -1,5 +1,6 @@
 package br.com.b2sky.infra.service;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -13,10 +14,15 @@ import reactor.core.publisher.Flux;
 public class StarWarApiService {
 	private final ModelMappingService mappingService;
 	private final WebClient webClient;
+	
+	@Value( "${planet.uri}" )
+	private String planetUri;
+	@Value( "${swapi.base}" )
+	private String baseUrl;
 
 	public StarWarApiService(ModelMappingService mappingService) {
 		this.mappingService = mappingService;
-		this.webClient = WebClient.create("https://swapi.dev");
+		this.webClient = WebClient.create(baseUrl);
 	}
 	
 	public Flux<Planet> getAllPlanets() {
@@ -34,7 +40,7 @@ public class StarWarApiService {
 
 	private Flux<PlanetsPage> getPlanetsFromRestApi() {
 		return webClient.get()
-				.uri("/api/planets/")
+				.uri(planetUri)
 				.exchange()
 				.flatMapMany(this::bodyToFlux);
 	}

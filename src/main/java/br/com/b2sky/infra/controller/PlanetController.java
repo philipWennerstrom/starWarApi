@@ -9,6 +9,7 @@ import java.util.Optional;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.ResponseEntity.HeadersBuilder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -35,15 +36,23 @@ public class PlanetController {
 	}
 	
 	@GetMapping("/planets")
-	public Mono<ResponseEntity<List<Planet>>> searchTerms(@RequestParam(required=false, name="name") String[] name) {
+	public Mono<ResponseEntity<List<Planet>>> find(@RequestParam(required=false, name="name") String[] name) {
 		return searchPlanets(name)
 				.collectList()
 				.map(ResponseEntity::ok)
 				.onErrorResume(PlanetNotFoundException.class, this::notFound);
 	}
+	
+	@GetMapping("/planets/{id}")
+	public Mono<ResponseEntity<Planet>> findById(@PathVariable String id) {
+		return planetService.findById(id)
+				.map(ResponseEntity::ok)
+				.switchIfEmpty(Mono.just(ResponseEntity.notFound().build()));
+	}
 
 	private Flux<Planet> searchPlanets(String[] name) {
-		return Optional.ofNullable(name)
+		return Optional
+				.ofNullable(name)
 				.map(this::findByName)
 				.orElseGet(planetService::findAll);
 	}

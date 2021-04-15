@@ -38,6 +38,10 @@ public class PlanetService {
 		return retrieveByName(name).next().switchIfEmpty(swapiPlanet);
 	}
 	
+	public Mono<Planet> findById(String id){
+		return repository.findById(id);
+	}
+	
 	public Flux<Planet> findAll(){
 		return repository.findAll();
 	}
