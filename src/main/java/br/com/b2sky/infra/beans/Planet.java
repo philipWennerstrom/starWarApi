@@ -13,6 +13,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Planet {
+	private String id;
 	private String name;
 	private String clima;
 	private String terreno;

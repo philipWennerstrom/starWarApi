@@ -6,9 +6,12 @@ import br.com.b2sky.infra.beans.Planet;
 import br.com.b2sky.infra.errors.PlanetNotFoundException;
 import br.com.b2sky.infra.log.IntegrationMonitorLog;
 import br.com.b2sky.infra.repo.PlanetRepository;
+import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
 
 @Service
 public class PlanetService {
@@ -30,14 +33,23 @@ public class PlanetService {
 	 * @return {@link Mono}<{@link Planet}>
 	 */
 	public Mono<Planet> find(String name) {
-		return retrieveByName(name).next().switchIfEmpty(getPlanetFromSWAPI(name));
+		Mono<Planet> swapiPlanet = getPlanetFromSWAPI(name).doOnNext(this::parallelSave);
+		
+		return retrieveByName(name).next().switchIfEmpty(swapiPlanet);
+	}
+
+	private Disposable parallelSave(Planet onNext) {
+		return Flux.just(onNext)
+				.parallel()
+				.runOn(Schedulers.elastic())
+				.flatMap(repository::save)
+				.subscribe();
 	}
 
 	private Mono<Planet> getPlanetFromSWAPI(String name) {
-		Mono<String> just = Mono.just(name);
+		Mono<String> just = Mono.just(name).cache();
 		
-		return swapiService.getAllPlanets()
-				.zipWith(just)
+		return Flux.combineLatest(swapiService.getAllPlanets(), just, Tuples::of)
 				.filter(this::byName)
 				.switchIfEmpty(planetNotFound(name))
 				.next()
