@@ -37,6 +37,10 @@ public class PlanetService {
 		
 		return retrieveByName(name).next().switchIfEmpty(swapiPlanet);
 	}
+	
+	public Flux<Planet> findAll(){
+		return repository.findAll();
+	}
 
 	private Disposable parallelSave(Planet onNext) {
 		return Flux.just(onNext)

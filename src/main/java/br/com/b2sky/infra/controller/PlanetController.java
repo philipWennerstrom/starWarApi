@@ -3,6 +3,9 @@
  */
 package br.com.b2sky.infra.controller;
 
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.ResponseEntity.HeadersBuilder;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,6 +16,7 @@ import br.com.b2sky.infra.beans.Planet;
 import br.com.b2sky.infra.errors.PlanetNotFoundException;
 import br.com.b2sky.infra.log.IntegrationMonitorLog;
 import br.com.b2sky.infra.service.PlanetService;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -31,18 +35,24 @@ public class PlanetController {
 	}
 	
 	@GetMapping("/planets")
-	public Mono<ResponseEntity<Planet>> searchTerms(@RequestParam("name") String[] name) {
-		return findByName(name)
+	public Mono<ResponseEntity<List<Planet>>> searchTerms(@RequestParam(required=false, name="name") String[] name) {
+		return searchPlanets(name)
+				.collectList()
 				.map(ResponseEntity::ok)
 				.onErrorResume(PlanetNotFoundException.class, this::notFound);
 	}
 
-	private Mono<Planet> findByName(String[] name) {
-		return nameToMono(name)
-				.flatMap(planetService::find);
+	private Flux<Planet> searchPlanets(String[] name) {
+		return Optional.ofNullable(name)
+				.map(this::findByName)
+				.orElseGet(planetService::findAll);
 	}
 
-	private Mono<ResponseEntity<Planet>> notFound(PlanetNotFoundException e) {
+	private Flux<Planet> findByName(String[] n) {
+		return nameToMono(n).flatMapMany(planetService::find);
+	}
+
+	private Mono<ResponseEntity<List<Planet>>> notFound(PlanetNotFoundException e) {
 		planetNotFoundLog(e).subscribe();
 		
 		return Mono.just(ResponseEntity.notFound())
