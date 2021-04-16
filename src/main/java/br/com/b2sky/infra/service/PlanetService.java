@@ -4,7 +4,6 @@ import org.springframework.stereotype.Service;
 
 import br.com.b2sky.infra.beans.Planet;
 import br.com.b2sky.infra.errors.PlanetNotFoundException;
-import br.com.b2sky.infra.log.IntegrationMonitorLog;
 import br.com.b2sky.infra.repo.PlanetRepository;
 import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
@@ -100,9 +99,7 @@ public class PlanetService {
 	 * @return
 	 */
 	private Mono<Void> errorLog(Throwable e) {
-		return IntegrationMonitorLog.builder(getClass())
-				.error("Erro ao acessar banco de dados")
-				.exception((Exception) e)
-				.build();
+		//application log
+		return Mono.empty();
 	}
 }

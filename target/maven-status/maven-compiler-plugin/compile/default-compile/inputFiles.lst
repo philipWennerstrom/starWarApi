@@ -6,4 +6,5 @@
 /home/luiz.philip/eclipse-workspace/starWarApi/src/main/java/br/com/b2sky/infra/StarWarApplication.java
 /home/luiz.philip/eclipse-workspace/starWarApi/src/main/java/br/com/b2sky/infra/starwarapi/beans/PlanetsPage.java
 /home/luiz.philip/eclipse-workspace/starWarApi/src/main/java/br/com/b2sky/infra/beans/Planet.java
+/home/luiz.philip/eclipse-workspace/starWarApi/src/main/java/br/com/b2sky/infra/service/ModelMappingService.java
 /home/luiz.philip/eclipse-workspace/starWarApi/src/main/java/br/com/b2sky/infra/errors/PlanetNotFoundException.java

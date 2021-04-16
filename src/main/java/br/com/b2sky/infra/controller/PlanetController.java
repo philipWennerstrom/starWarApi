@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import br.com.b2sky.infra.beans.Planet;
 import br.com.b2sky.infra.errors.PlanetNotFoundException;
-import br.com.b2sky.infra.log.IntegrationMonitorLog;
 import br.com.b2sky.infra.service.PlanetService;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -69,10 +68,8 @@ public class PlanetController {
 	}
 
 	private Mono<Void> planetNotFoundLog(PlanetNotFoundException e) {
-		return IntegrationMonitorLog.builder(getClass())
-				.error("Planeta nao encontrado")
-				.exception(e)
-				.build();
+			//application Log
+			return Mono.empty();
 	}
 
 	private Mono<String> nameToMono(String[] name) {
